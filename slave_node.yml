@@ -1,0 +1,76 @@
+- hosts: 192.168.1.105
+  vars_files:
+          - var.yml
+  tasks:
+          - copy:
+                  dest: "/root/"
+                  src: "/ansible-ws/task-11.1/jdk-8u171-linux-x64.rpm"
+
+          - copy:
+                  dest: "/root/"
+                  src: "/ansible-ws/task-11.1/hadoop-1.2.1-1.x86_64.rpm"
+
+          - command: "rpm -ivh jdk-8u171-linux-x64.rpm"
+            register: x
+            ignore_errors: yes
+
+          - debug:
+                  var: x.stdout
+
+          - command: "rpm -ivh hadoop-1.2.1-1.x86_64.rpm --force"
+            register: y
+            ignore_errors: yes
+
+          - debug:
+                  var: y.stdout
+
+          - shell: "rm -rf {{ data_dir }}"
+            ignore_errors: yes
+
+          - copy:
+                  dest: "/etc/hadoop/hdfs-site.xml"
+                  src: "/ansible-ws/task-11.1/hdfs-site.xml"
+
+          - copy:
+                  dest: "/etc/hadoop/core-site.xml"
+                  src: "/ansible-ws/task-11.1/core-site.xml"
+
+
+          - blockinfile:
+                  path: "/etc/hadoop/hdfs-site.xml"
+                  insertafter: <property>
+                  block: |
+                         <name>{{ data }}</name> 
+                         <value>{{ data_dir }}</value>
+          - debug:
+                  var: groups['namenode']
+
+          - blockinfile:
+                  path: "/etc/hadoop/core-site.xml"
+                  insertafter: </name>
+                  block: 
+                          <value>hdfs://{{ groups['namenode'][0] }}:9001</value> 
+          - shell: "hadoop-daemon.sh stop datanode"
+            ignore_errors: yes
+            register: stop_data
+
+          - debug:
+                   var: stop_data.stdout
+          
+          - shell: "hadoop-daemon.sh start datanode"
+            register: start_data
+
+          - debug:
+                  var: start_data.stdout
+
+          - command: "jps"
+            register: run_jps
+
+          - debug:
+                  var: run_jps.stdout
+
+          - command: "hadoop dfsadmin -report"
+            register: report
+
+          - debug:
+                  var: report.stdout

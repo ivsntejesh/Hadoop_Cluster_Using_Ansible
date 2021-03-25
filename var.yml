@@ -1,0 +1,4 @@
+master_dir: "/nn"
+master: "dfs.name.dir"
+data: "dfs.data.dir"
+data_dir: "/dn1"
